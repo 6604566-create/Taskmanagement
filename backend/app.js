@@ -32,7 +32,7 @@ const PORT = process.env.PORT || 8000;
 /* ================= MIDDLEWARE ================= */
 
 const defaultLocalOrigins = ["http://localhost:3000", "http://localhost:5173"];
-const envClientUrls = process.env.CLIENT_URL
+const envClientUrls = process.env.CLIENT_URLS
   ? process.env.CLIENT_URLS.split(",").map((u) => u.trim()).filter(Boolean)
   : [process.env.CLIENT_URL, process.env.CLIENT_URL_2].filter(Boolean);
 const allowedOrigins = [...defaultLocalOrigins, ...envClientUrls].filter(Boolean);
