@@ -31,28 +31,17 @@ const PORT = process.env.PORT || 8000;
 
 /* ================= MIDDLEWARE ================= */
 
-const allowedOrigins = [
-  "http://localhost:3000",
-  "http://localhost:5173",
-  process.env.CLIENT_URL,
-  process.env.CLIENT_URL_2,
-].filter(Boolean);
+const defaultLocalOrigins = ["http://localhost:3000", "http://localhost:5173"];
+const envClientUrls = process.env.CLIENT_URL
+  ? process.env.CLIENT_URLS.split(",").map((u) => u.trim()).filter(Boolean)
+  : [process.env.CLIENT_URL, process.env.CLIENT_URL_2].filter(Boolean);
+const allowedOrigins = [...defaultLocalOrigins, ...envClientUrls].filter(Boolean);
 
 app.set("trust proxy", 1);
 
 app.use(
   cors({
-    origin(origin, callback) {
-      // Allow server-to-server or same-origin requests
-      if (!origin) return callback(null, true);
-
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-
-      // ❗ DO NOT throw error → respond gracefully
-      return callback(null, false);
-    },
+    origin: true,
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -60,6 +49,17 @@ app.use(
 );
 
 app.options("*", cors());
+
+// Ensure Access-Control-Allow-Origin is explicitly set for allowed origins.
+// Some hosting layers or error responses can omit ACAO; this middleware guarantees it
+// for responses when the request Origin is in our allowlist.
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (origin && allowedOrigins.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+  }
+  next();
+});
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
